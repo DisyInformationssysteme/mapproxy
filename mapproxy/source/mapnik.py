@@ -18,6 +18,7 @@ from __future__ import absolute_import
 import sys
 import time
 import threading
+import multiprocessing
 
 from mapproxy.grid import tile_grid
 from mapproxy.image import ImageSource
@@ -26,7 +27,7 @@ from mapproxy.layer import MapExtent, DefaultMapExtent, BlankImage, MapLayer
 from mapproxy.source import  SourceError
 from mapproxy.client.log import log_request
 from mapproxy.util.py import reraise_exception
-from mapproxy.util.async_ import run_non_blocking
+from mapproxy.util.async import run_non_blocking
 from mapproxy.compat import BytesIO
 
 try:
@@ -57,8 +58,10 @@ class MapnikSource(MapLayer):
         self.layers = set(layers) if layers else None
         self.scale_factor = scale_factor
         self.lock = lock
-        self._map_objs = {}
-        self._map_objs_lock = threading.Lock()
+        global _map_objs
+        _map_objs = {}
+        global _map_objs_lock
+        _map_objs_lock = threading.Lock()
         self._cache_map_obj = reuse_map_objects
         if self.coverage:
             self.extent = MapExtent(self.coverage.bbox, self.coverage.srs)
@@ -94,23 +97,26 @@ class MapnikSource(MapLayer):
             return self.render_mapfile(mapfile, query)
 
     def map_obj(self, mapfile):
-        if not self._cache_map_obj:
-            m = mapnik.Map(0, 0)
-            mapnik.load_map(m, str(mapfile))
-            return m
-
+        proc = multiprocessing.current_process()
+        process_id = proc._identity # identity is a tuple with a number
+        cachekey = (process_id, mapfile)
         # cache loaded map objects
         # only works when a single proc/thread accesses this object
         # (forking the render process doesn't work because of open database
         #  file handles that gets passed to the child)
-        if mapfile not in self._map_objs:
-            with self._map_objs_lock:
-                if mapfile not in self._map_objs:
+        if cachekey not in _map_objs:
+            with _map_objs_lock:
+                if cachekey not in _map_objs:
+                    print ("XXX caching for mapfile", mapfile, proc, _map_objs)
                     m = mapnik.Map(0, 0)
+                    _map_objs[cachekey] = m
                     mapnik.load_map(m, str(mapfile))
-                    self._map_objs[mapfile] = m
-
-        return self._map_objs[mapfile]
+                    print ("XXX set for mapfile", mapfile, proc, _map_objs)
+                    # raise Exception("foo")
+        else:
+            print ("XXX mapfile from cache", mapfile)
+            
+        return _map_objs[cachekey]
 
     def render_mapfile(self, mapfile, query):
         return run_non_blocking(self._render_mapfile, (mapfile, query))
