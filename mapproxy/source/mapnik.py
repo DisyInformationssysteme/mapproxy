@@ -109,7 +109,7 @@ class MapnikSource(MapLayer):
         if cachekey not in _map_loading:
             _map_loading[cachekey] = threading.Event()
             with _map_objs_lock:
-                print ("XXX caching for mapfile", mapfile, cachekey, proc, _map_objs)
+                print ("XXX caching for mapfile", mapfile, cachekey, process_id, _map_objs)
                 a = time.time()
                 m = mapnik.Map(0, 0)
                 b = time.time()
@@ -118,7 +118,7 @@ class MapnikSource(MapLayer):
                 print("XXXTIME load_map", time.time() - b)
                 _map_objs[cachekey] = m
                 _map_loading[cachekey].set()
-                print ("XXX set for mapfile", mapfile, cachekey, proc, _map_objs)
+                print ("XXX set for mapfile", mapfile, cachekey, process_id, _map_objs)
                 # raise Exception("foo")
         else:
             # ensure that the map is loaded completely before it gets used
