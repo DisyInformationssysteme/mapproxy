@@ -113,6 +113,7 @@ class MapnikSource(MapLayer):
                               if k[0] == process_id]
         for k in process_cache_keys:
             if not k[1] in active_thread_ids:
+                print("XXX removing no longer active map", k)
                 del _map_objs[k]
         
         return _map_objs[cachekey]
