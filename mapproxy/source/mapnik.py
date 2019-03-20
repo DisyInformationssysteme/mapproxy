@@ -100,7 +100,7 @@ class MapnikSource(MapLayer):
 
     def map_obj(self, mapfile):
         thread_id = threading.current_thread().ident
-        process_id = multiprocessing.current_process()._identity # identity is a tuple with a number
+        process_id = multiprocessing.current_process()._identity
         cachekey = (process_id, thread_id, mapfile)
         # cache loaded map objects
         # only works when a single proc/thread accesses this object
@@ -109,22 +109,14 @@ class MapnikSource(MapLayer):
         if cachekey not in _map_loading:
             _map_loading[cachekey] = threading.Event()
             with _map_objs_lock:
-                print ("XXX caching for mapfile", mapfile, cachekey, process_id, _map_objs)
-                a = time.time()
                 m = mapnik.Map(0, 0)
-                b = time.time()
-                print("XXXTIME create", b - a)
                 mapnik.load_map(m, str(mapfile))
-                print("XXXTIME load_map", time.time() - b)
                 _map_objs[cachekey] = m
                 _map_loading[cachekey].set()
-                print ("XXX set for mapfile", mapfile, cachekey, process_id, _map_objs)
-                # raise Exception("foo")
         else:
             # ensure that the map is loaded completely before it gets used
             _map_loading[cachekey].wait()
-            mapnik.clear_cache()
-            print ("XXX mapfile from cache", mapfile, cachekey)
+            # mapnik.clear_cache()
 
         # clean up no longer used cached maps
         active_thread_ids = set(i.ident for i in threading.enumerate())
