@@ -150,12 +150,16 @@ class MapnikSource(MapLayer):
                     else:
                         i += 1
 
+            print ("XXXTime before Image", time.time() - start_time)
             img = mapnik.Image(query.size[0], query.size[1])
+            print ("XXXTime after Image", time.time() - start_time)
             if self.scale_factor:
                 mapnik.render(m, img, self.scale_factor)
             else:
                 mapnik.render(m, img)
+            print ("XXXTime to render", time.time() - start_time)
             data = img.tostring(str(query.format))
+            print ("XXXTime after tostring", time.time() - start_time)
         finally:
             size = None
             if data:
