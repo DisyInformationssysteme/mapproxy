@@ -125,6 +125,7 @@ class MapnikSource(MapLayer):
         for k in process_cache_keys:
             if not k[1] in active_thread_ids:
                 del _map_objs[k]
+                del _map_loading[k]
         
         return _map_objs[cachekey]
 
@@ -150,16 +151,12 @@ class MapnikSource(MapLayer):
                     else:
                         i += 1
 
-            print ("XXXTime before Image", time.time() - start_time)
             img = mapnik.Image(query.size[0], query.size[1])
-            print ("XXXTime after Image", time.time() - start_time)
             if self.scale_factor:
                 mapnik.render(m, img, self.scale_factor)
             else:
                 mapnik.render(m, img)
-            print ("XXXTime to render", time.time() - start_time)
             data = img.tostring(str(query.format))
-            print ("XXXTime after tostring", time.time() - start_time)
         finally:
             size = None
             if data:
