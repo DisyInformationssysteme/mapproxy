@@ -108,13 +108,14 @@ class MapnikSource(MapLayer):
             _map_objs[cachekey] = m
 
         # clean up no longer used cached maps
-        active_thread_ids = set(i.ident for i in threading.enumerate())
-        process_cache_keys = [k for k in _map_objs.keys()
-                              if k[0] == process_id]
-        for k in process_cache_keys:
-            if not k[1] in active_thread_ids:
-                print("XXX removing no longer active map", k)
-                del _map_objs[k]
+        if len(_map_objs.keys()) > threading.active_count():
+            active_thread_ids = set(i.ident for i in threading.enumerate())
+            process_cache_keys = [k for k in _map_objs.keys()
+                                  if k[0] == process_id]
+            for k in process_cache_keys:
+                if not k[1] in active_thread_ids:
+                    print("XXX removing no longer active map", k)
+                    del _map_objs[k]
         
         return _map_objs[cachekey]
 
