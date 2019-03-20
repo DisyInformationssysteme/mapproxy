@@ -117,6 +117,8 @@ class MapnikSource(MapLayer):
                 print("XXXTIME create", b - a)
                 mapnik.load_map(m, str(mapfile))
                 print("XXXTIME load_map", time.time() - b)
+                mapnik.load_map(m, str(mapfile))
+                print("XXXTIME load_map again", time.time() - b)
                 _map_objs[cachekey] = m
                 _map_loading[cachekey].set()
                 print ("XXX set for mapfile", mapfile, cachekey, proc, _map_objs)
