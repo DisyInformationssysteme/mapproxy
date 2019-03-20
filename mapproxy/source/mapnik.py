@@ -69,6 +69,7 @@ class MapnikSource(MapLayer):
             self.extent = MapExtent(self.coverage.bbox, self.coverage.srs)
         else:
             self.extent = DefaultMapExtent()
+        raise Exception()
 
     def get_map(self, query):
         if self.res_range and not self.res_range.contains(query.bbox, query.size,
