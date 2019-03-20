@@ -95,13 +95,14 @@ class MapnikSource(MapLayer):
             return self.render_mapfile(mapfile, query)
 
     def map_obj(self, mapfile):
+        # cache loaded map objects
+        # only works when a single proc/thread accesses the map
+        # (forking the render process doesn't work because of open database
+        #  file handles that gets passed to the child)
+        # segment the cache by process and thread to avoid locking
         thread_id = threading.current_thread().ident
         process_id = multiprocessing.current_process()._identity
         cachekey = (process_id, thread_id, mapfile)
-        # cache loaded map objects
-        # only works when a single proc/thread accesses this object
-        # (forking the render process doesn't work because of open database
-        #  file handles that gets passed to the child)
         if cachekey not in _map_objs:
             m = mapnik.Map(0, 0)
             mapnik.load_map(m, str(mapfile))
@@ -114,7 +115,6 @@ class MapnikSource(MapLayer):
                                   if k[0] == process_id]
             for k in process_cache_keys:
                 if not k[1] in active_thread_ids:
-                    print("XXX removing no longer active map", k)
                     del _map_objs[k]
 
         return _map_objs[cachekey]
