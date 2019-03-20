@@ -60,6 +60,8 @@ class MapnikSource(MapLayer):
         self.lock = lock
         global _map_objs
         _map_objs = {}
+        global _map_loading
+        _map_loading = {}
         global _map_objs_lock
         _map_objs_lock = threading.Lock()
         self._cache_map_obj = reuse_map_objects
@@ -104,18 +106,21 @@ class MapnikSource(MapLayer):
         # only works when a single proc/thread accesses this object
         # (forking the render process doesn't work because of open database
         #  file handles that gets passed to the child)
-        if cachekey not in _map_objs:
+        if cachekey not in _map_loading:
+            _map_loading[cachekey] = threading.Event()
             with _map_objs_lock:
-                if cachekey not in _map_objs:
-                    print ("XXX caching for mapfile", mapfile, proc, _map_objs)
-                    m = mapnik.Map(0, 0)
-                    _map_objs[cachekey] = m
-                    mapnik.load_map(m, str(mapfile))
-                    print ("XXX set for mapfile", mapfile, proc, _map_objs)
-                    # raise Exception("foo")
+                print ("XXX caching for mapfile", mapfile, proc, _map_objs)
+                m = mapnik.Map(0, 0)
+                mapnik.load_map(m, str(mapfile))
+                _map_objs[cachekey] = m
+                _map_loading[cachekey].set()
+                print ("XXX set for mapfile", mapfile, proc, _map_objs)
+                # raise Exception("foo")
         else:
-            print ("XXX mapfile from cache", mapfile)
-            
+            # ensure that the map is loaded completely before it gets used
+            _map_loading[cachekey].wait()
+            print ("XXX mapfile from cache", mapfile)            
+
         return _map_objs[cachekey]
 
     def render_mapfile(self, mapfile, query):
