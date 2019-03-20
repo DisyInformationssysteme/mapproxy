@@ -116,7 +116,7 @@ class MapnikSource(MapLayer):
                 if not k[1] in active_thread_ids:
                     print("XXX removing no longer active map", k)
                     del _map_objs[k]
-        
+
         return _map_objs[cachekey]
 
     def render_mapfile(self, mapfile, query):
