@@ -107,6 +107,7 @@ class MapnikSource(MapLayer):
         # (forking the render process doesn't work because of open database
         #  file handles that gets passed to the child)
         if True or cachekey not in _map_loading:
+            print ("XXX caching is OFF")
             _map_loading[cachekey] = threading.Event()
             with _map_objs_lock:
                 print ("XXX caching for mapfile", mapfile, proc, _map_objs)
