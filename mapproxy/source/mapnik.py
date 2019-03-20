@@ -99,7 +99,7 @@ class MapnikSource(MapLayer):
             return self.render_mapfile(mapfile, query)
 
     def map_obj(self, mapfile):
-        thread_id = threading.current_thread().get_ident
+        thread_id = threading.get_ident()
         process_id = multiprocessing.current_process()._identity # identity is a tuple with a number
         cachekey = (process_id, thread_id, mapfile)
         # cache loaded map objects
