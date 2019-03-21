@@ -94,28 +94,37 @@ class MapnikSource(MapLayer):
         else:
             return self.render_mapfile(mapfile, query)
 
+    def _create_map_obj(self, mapfile):
+        m = mapnik.Map(0, 0)
+        mapnik.load_map(m, str(mapfile))
+        return m
+
     def map_obj(self, mapfile):
         # cache loaded map objects
         # only works when a single proc/thread accesses the map
         # (forking the render process doesn't work because of open database
         #  file handles that gets passed to the child)
-        # segment the cache by process and thread to avoid locking
+        # segment the cache by process and thread to avoid interference
         thread_id = threading.current_thread().ident
         process_id = multiprocessing.current_process()._identity
         cachekey = (process_id, thread_id, mapfile)
         if cachekey not in _map_objs:
-            m = mapnik.Map(0, 0)
-            mapnik.load_map(m, str(mapfile))
-            _map_objs[cachekey] = m
+            _map_objs[cachekey] = self._create_map_obj(mapfile)
 
         # clean up no longer used cached maps
-        if len(_map_objs.keys()) > threading.active_count():
+        process_cache_keys = [k for k in _map_objs.keys()
+                              if k[0] == process_id]
+        if len(process_cache_keys) > (5 + threading.active_count()):
             active_thread_ids = set(i.ident for i in threading.enumerate())
-            process_cache_keys = [k for k in _map_objs.keys()
-                                  if k[0] == process_id]
             for k in process_cache_keys:
-                if not k[1] in active_thread_ids:
-                    del _map_objs[k]
+                if not k[1] in active_thread_ids and k in _map_objs:
+                    try:
+                        m = _map_objs[k]
+                        del _map_objs[k]
+                    except KeyError:
+                        continue
+                    m.remove_all() # cleanup
+                    mapnik.clear_cache()
 
         return _map_objs[cachekey]
 
