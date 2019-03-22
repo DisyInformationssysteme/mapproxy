@@ -78,7 +78,7 @@ class MapnikSource(MapLayer):
         if self._cache_map_obj:
             _precreate_count = 1
         else:
-            _precreate_count = (concurrent_tile_creators if concurrent_tile_creators else 4) # 4 is the default for async_.ThreadPool
+            _precreate_count = (2 * concurrent_tile_creators if concurrent_tile_creators else 4) # 4 is the default for async_.ThreadPool
         print("XXX precreate count:", _precreate_count, concurrent_tile_creators, self._cache_map_obj)
         _map_objs_precreated = queue.Queue(_precreate_count)
         self.map_obj_pre_creating_thread = threading.Thread(target=self._precreate_maps)
