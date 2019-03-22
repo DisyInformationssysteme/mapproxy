@@ -59,6 +59,7 @@ class MapnikSource(MapLayer):
         self.layers = set(layers) if layers else None
         self.scale_factor = scale_factor
         self.lock = lock
+        # global objects to support multiprocessing
         global _map_objs
         _map_objs = {}
         global _last_activity
@@ -69,9 +70,11 @@ class MapnikSource(MapLayer):
         else:
             self.extent = DefaultMapExtent()
         # pre-created mapfiles for higher reactivity
-        self._last_mapfile = None
+        global _last_mapfile
+        _last_mapfile = None
         # pre-create more maps than the typical number of threads to allow for fast start
-        self._map_objs_precreated = queue.Queue(6)
+        global _map_objs_precreated
+        _map_objs_precreated = queue.Queue(6)
         self.map_obj_pre_creating_thread = threading.Thread(target=self._precreate_maps)
         self.map_obj_pre_creating_thread.daemon=True
         self.map_obj_pre_creating_thread.start()
@@ -80,18 +83,19 @@ class MapnikSource(MapLayer):
         return time.time() > _last_activity + 30
 
     def _restart_idle_timer(self):
+        global _last_activity
         _last_activity = time.time()
         
     def _precreate_maps(self):
         while True:
             mapfile = self._last_mapfile
-            if mapfile is None or self._map_objs_precreated.full():
+            if mapfile is None or _map_objs_precreated.full():
                 time.sleep (30)
                 continue
             if not self._idle():
                 time.sleep(5)
                 continue
-            self._map_objs_precreated.put((mapfile, self._create_map_obj(mapfile)))
+            _map_objs_precreated.put((mapfile, self._create_map_obj(mapfile)))
             print("XXX pre-created map for mapfile", mapfile)
             # prefer creating currently needed maps to filling the cache
             time.sleep(5)
@@ -131,9 +135,9 @@ class MapnikSource(MapLayer):
         return m
 
     def _get_map_obj(self, mapfile):
-        while not self._map_objs_precreated.empty():
+        while not _map_objs_precreated.empty():
             try:
-                mf, m = self._map_objs_precreated.get()
+                mf, m = _map_objs_precreated.get()
             except queue.Empty:
                 break
             if mf == mapfile:
@@ -142,6 +146,7 @@ class MapnikSource(MapLayer):
         return self._create_map_obj(mapfile)
     
     def map_obj(self, mapfile):
+        # avoid concurrent cache filling
         self._restart_idle_timer()
         # cache loaded map objects
         # only works when a single proc/thread accesses the map
