@@ -75,10 +75,11 @@ class MapnikSource(MapLayer):
 
     def _precreate_maps(self):
         while True:
-            if self._last_mapfile is None or self._map_objs_precreated.full():
+            mapfile = self._last_mapfile
+            if mapfile is None or self._map_objs_precreated.full():
                 time.sleep (0.5)
                 continue
-            
+            self._map_objs_precreated.put((mapfile, self._create_map_obj(mapfile)))
 
     def get_map(self, query):
         if self.res_range and not self.res_range.contains(query.bbox, query.size,
@@ -114,6 +115,16 @@ class MapnikSource(MapLayer):
         self._last_mapfile = mapfile
         return m
 
+    def _get_map_obj(self, mapfile):
+        while not self._map_objs_precreated.empty():
+            try:
+                mf, m = self._map_objs_precreated.get()
+            except queue.Empty:
+                break
+            if mf == mapfile:
+                return m
+        return _create_map_obj(mapfile)
+    
     def map_obj(self, mapfile):
         # cache loaded map objects
         # only works when a single proc/thread accesses the map
