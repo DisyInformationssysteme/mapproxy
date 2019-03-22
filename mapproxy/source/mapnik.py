@@ -80,6 +80,7 @@ class MapnikSource(MapLayer):
                 time.sleep (0.5)
                 continue
             self._map_objs_precreated.put((mapfile, self._create_map_obj(mapfile)))
+            print("XXX pre-created map for mapfile", mapfile)
 
     def get_map(self, query):
         if self.res_range and not self.res_range.contains(query.bbox, query.size,
@@ -122,6 +123,7 @@ class MapnikSource(MapLayer):
             except queue.Empty:
                 break
             if mf == mapfile:
+                print ("XXX got map from cache for mapfile", mf)
                 return m
         return _create_map_obj(mapfile)
     
