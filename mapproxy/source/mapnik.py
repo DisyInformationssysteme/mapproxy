@@ -68,6 +68,7 @@ class MapnikSource(MapLayer):
             self.extent = DefaultMapExtent()
         # pre-created mapfiles for higher reactivity
         self._last_mapfile = None
+        # pre-create more maps than the typical number of threads to allow for fast start
         self._map_objs_precreated = queue.Queue(6)
         self.map_obj_pre_creating_thread = threading.Thread(target=self._precreate_maps)
         self.map_obj_pre_creating_thread.daemon=True
@@ -77,12 +78,12 @@ class MapnikSource(MapLayer):
         while True:
             mapfile = self._last_mapfile
             if mapfile is None or self._map_objs_precreated.full():
-                time.sleep (0.5)
+                time.sleep (10)
                 continue
             self._map_objs_precreated.put((mapfile, self._create_map_obj(mapfile)))
             print("XXX pre-created map for mapfile", mapfile)
             # prefer creating currently needed maps to filling the cache
-            time.sleep(3)
+            time.sleep(10)
 
     def get_map(self, query):
         if self.res_range and not self.res_range.contains(query.bbox, query.size,
