@@ -82,7 +82,7 @@ class MapnikSource(MapLayer):
         print("XXX precreate count:", _precreate_count, concurrent_tile_creators, self._cache_map_obj)
         _map_objs_precreated = queue.Queue(_precreate_count)
         self.map_obj_pre_creating_thread = threading.Thread(target=self._precreate_maps)
-        self.map_obj_pre_creating_thread.daemon=True
+        self.map_obj_pre_creating_thread.daemon = True
         self.map_obj_pre_creating_thread.start()
 
     def _idle(self):
