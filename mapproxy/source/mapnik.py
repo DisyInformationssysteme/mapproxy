@@ -88,7 +88,7 @@ class MapnikSource(MapLayer):
         
     def _precreate_maps(self):
         while True:
-            mapfile = self._last_mapfile
+            mapfile = _last_mapfile
             if mapfile is None or _map_objs_precreated.full():
                 time.sleep (30)
                 continue
@@ -131,7 +131,8 @@ class MapnikSource(MapLayer):
     def _create_map_obj(self, mapfile):
         m = mapnik.Map(0, 0)
         mapnik.load_map(m, str(mapfile))
-        self._last_mapfile = mapfile
+        global _last_mapfile
+        _last_mapfile = mapfile
         return m
 
     def _get_map_obj(self, mapfile):
