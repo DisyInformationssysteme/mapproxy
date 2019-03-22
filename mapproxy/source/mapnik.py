@@ -61,6 +61,8 @@ class MapnikSource(MapLayer):
         self.lock = lock
         global _map_objs
         _map_objs = {}
+        global _last_activity
+        _last_activity = time.time()
         self._cache_map_obj = reuse_map_objects
         if self.coverage:
             self.extent = MapExtent(self.coverage.bbox, self.coverage.srs)
@@ -74,16 +76,25 @@ class MapnikSource(MapLayer):
         self.map_obj_pre_creating_thread.daemon=True
         self.map_obj_pre_creating_thread.start()
 
+    def _idle(self):
+        return time.time() > _last_activity + 30
+
+    def _restart_idle_timer(self):
+        return _last_activity = time.time()
+        
     def _precreate_maps(self):
         while True:
             mapfile = self._last_mapfile
             if mapfile is None or self._map_objs_precreated.full():
-                time.sleep (10)
+                time.sleep (30)
+                continue
+            if not self._idle():
+                time.sleep(5)
                 continue
             self._map_objs_precreated.put((mapfile, self._create_map_obj(mapfile)))
             print("XXX pre-created map for mapfile", mapfile)
             # prefer creating currently needed maps to filling the cache
-            time.sleep(10)
+            time.sleep(5)
 
     def get_map(self, query):
         if self.res_range and not self.res_range.contains(query.bbox, query.size,
@@ -131,6 +142,7 @@ class MapnikSource(MapLayer):
         return self._create_map_obj(mapfile)
     
     def map_obj(self, mapfile):
+        self._restart_idle_timer()
         # cache loaded map objects
         # only works when a single proc/thread accesses the map
         # (forking the render process doesn't work because of open database
@@ -157,6 +169,7 @@ class MapnikSource(MapLayer):
                     m.remove_all() # cleanup
                     mapnik.clear_cache()
 
+        self._restart_idle_timer()
         return _map_objs[cachekey]
 
     def render_mapfile(self, mapfile, query):
