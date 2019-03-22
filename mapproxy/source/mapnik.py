@@ -51,7 +51,8 @@ log = logging.getLogger(__name__)
 class MapnikSource(MapLayer):
     supports_meta_tiles = True
     def __init__(self, mapfile, layers=None, image_opts=None, coverage=None,
-        res_range=None, lock=None, reuse_map_objects=False, scale_factor=None):
+                 res_range=None, lock=None, reuse_map_objects=False, scale_factor=None,
+                 concurrent_requests=None):
         MapLayer.__init__(self, image_opts=image_opts)
         self.mapfile = mapfile
         self.coverage = coverage
@@ -74,7 +75,9 @@ class MapnikSource(MapLayer):
         _last_mapfile = None
         # pre-create more maps than the typical number of threads to allow for fast start
         global _map_objs_precreated
-        _map_objs_precreated = queue.Queue(6)
+        _precreate_count = (concurrent_tile_creators if concurrent_tile_creators else 3)
+        print("XXX precreate count:", _precreate_count)
+        _map_objs_precreated = queue.Queue(_precreate_count)
         self.map_obj_pre_creating_thread = threading.Thread(target=self._precreate_maps)
         self.map_obj_pre_creating_thread.daemon=True
         self.map_obj_pre_creating_thread.start()
