@@ -137,7 +137,7 @@ class MapnikSource(MapLayer):
         process_id = multiprocessing.current_process()._identity
         cachekey = (process_id, thread_id, mapfile)
         if cachekey not in _map_objs:
-            _map_objs[cachekey] = self._create_map_obj(mapfile)
+            _map_objs[cachekey] = self._get_map_obj(mapfile)
 
         # clean up no longer used cached maps
         process_cache_keys = [k for k in _map_objs.keys()
