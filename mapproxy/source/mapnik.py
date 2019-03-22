@@ -125,7 +125,7 @@ class MapnikSource(MapLayer):
             if mf == mapfile:
                 print ("XXX got map from cache for mapfile", mf)
                 return m
-        return _create_map_obj(mapfile)
+        return self._create_map_obj(mapfile)
     
     def map_obj(self, mapfile):
         # cache loaded map objects
