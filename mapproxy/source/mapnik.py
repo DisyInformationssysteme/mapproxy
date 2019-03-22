@@ -75,9 +75,11 @@ class MapnikSource(MapLayer):
         _last_mapfile = None
         # pre-create more maps than the typical number of threads to allow for fast start
         global _map_objs_precreated
-        
-        _precreate_count = (concurrent_tile_creators if concurrent_tile_creators else 4)
-        print("XXX precreate count:", _precreate_count, concurrent_tile_creators)
+        if self._cache_map_obj:
+            _precreate_count = 1
+        else:
+            _precreate_count = (concurrent_tile_creators if concurrent_tile_creators else 4) # 4 is the default for async_.ThreadPool
+        print("XXX precreate count:", _precreate_count, concurrent_tile_creators, self._cache_map_obj)
         _map_objs_precreated = queue.Queue(_precreate_count)
         self.map_obj_pre_creating_thread = threading.Thread(target=self._precreate_maps)
         self.map_obj_pre_creating_thread.daemon=True
@@ -91,6 +93,8 @@ class MapnikSource(MapLayer):
         _last_activity = time.time()
         
     def _precreate_maps(self):
+        if self._cache_map_obj:
+            return
         while True:
             mapfile = _last_mapfile
             if mapfile is None or _map_objs_precreated.full():
@@ -156,9 +160,12 @@ class MapnikSource(MapLayer):
         # (forking the render process doesn't work because of open database
         #  file handles that gets passed to the child)
         # segment the cache by process and thread to avoid interference
-        thread_id = threading.current_thread().ident
-        process_id = multiprocessing.current_process()._identity
-        cachekey = (process_id, thread_id, mapfile)
+        if self._cache_map_obj:
+            cachekey = None # renderd guarantees that there are no concurrency issues
+        else:
+            thread_id = threading.current_thread().ident
+            process_id = multiprocessing.current_process()._identity
+            cachekey = (process_id, thread_id, mapfile)
         if cachekey not in _map_objs:
             _map_objs[cachekey] = self._get_map_obj(mapfile)
 
