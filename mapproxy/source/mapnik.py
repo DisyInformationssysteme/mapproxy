@@ -93,8 +93,6 @@ class MapnikSource(MapLayer):
         _last_activity = time.time()
         
     def _precreate_maps(self):
-        if self._cache_map_obj:
-            return
         while True:
             mapfile = _last_mapfile
             if mapfile is None or _map_objs_precreated.full():
