@@ -69,7 +69,7 @@ class MapnikSource(MapLayer):
         # pre-created mapfiles for higher reactivity
         self._last_mapfile = None
         self._map_objs_precreated = queue.Queue(3)
-        self.map_obj_pre_creating_thread = threading.thread(target=self._precreate_maps)
+        self.map_obj_pre_creating_thread = threading.Thread(target=self._precreate_maps)
         self.map_obj_pre_creating_thread.daemon=True
         self.map_obj_pre_creating_thread.start()
 
