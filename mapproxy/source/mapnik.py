@@ -96,7 +96,6 @@ class MapnikSource(MapLayer):
                 time.sleep(5)
                 continue
             _map_objs_precreated.put((mapfile, self._create_map_obj(mapfile)))
-            print("XXX pre-created map for mapfile", mapfile)
             # prefer creating currently needed maps to filling the cache
             time.sleep(5)
 
@@ -142,7 +141,6 @@ class MapnikSource(MapLayer):
             except queue.Empty:
                 break
             if mf == mapfile:
-                print ("XXX got map from cache for mapfile", mf)
                 return m
         return self._create_map_obj(mapfile)
     
