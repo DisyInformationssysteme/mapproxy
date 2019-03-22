@@ -1448,7 +1448,6 @@ class CacheConfiguration(ConfigurationBase):
             global_key='cache.minimize_meta_requests')
         concurrent_tile_creators = self.context.globals.get_value('concurrent_tile_creators', self.conf,
             global_key='cache.concurrent_tile_creators')
-        print ("concurrent_tile_creators", concurrent_tile_creators)
 
         renderd_address = self.context.globals.get_value('renderd.address', self.conf)
 
