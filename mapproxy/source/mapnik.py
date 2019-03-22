@@ -18,6 +18,7 @@ from __future__ import absolute_import
 import sys
 import time
 import queue
+import random
 import threading
 import multiprocessing
 
@@ -96,14 +97,14 @@ class MapnikSource(MapLayer):
         while True:
             mapfile = _last_mapfile
             if mapfile is None or _map_objs_precreated.full():
-                time.sleep (30)
+                time.sleep(60 * random.random()) # randomized wait to avoid multiprocessing issues
                 continue
             if not self._idle():
-                time.sleep(5)
+                time.sleep(10 * random.random())
                 continue
             _map_objs_precreated.put((mapfile, self._create_map_obj(mapfile)))
             # prefer creating currently needed maps to filling the cache
-            time.sleep(5)
+            time.sleep(5 + (10 * random.random()))
 
     def get_map(self, query):
         if self.res_range and not self.res_range.contains(query.bbox, query.size,
