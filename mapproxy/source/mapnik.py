@@ -80,7 +80,7 @@ class MapnikSource(MapLayer):
         return time.time() > _last_activity + 30
 
     def _restart_idle_timer(self):
-        return _last_activity = time.time()
+        _last_activity = time.time()
         
     def _precreate_maps(self):
         while True:
