@@ -17,6 +17,7 @@ from __future__ import absolute_import
 
 import sys
 import time
+import queue
 import threading
 import multiprocessing
 
@@ -65,6 +66,19 @@ class MapnikSource(MapLayer):
             self.extent = MapExtent(self.coverage.bbox, self.coverage.srs)
         else:
             self.extent = DefaultMapExtent()
+        # pre-created mapfiles for higher reactivity
+        self._last_mapfile = None
+        self._map_objs_precreated = queue.Queue(3)
+        self.map_obj_pre_creating_thread = threading.thread(target=self._precreate_maps)
+        self.map_obj_pre_creating_thread.daemon=True
+        self.map_obj_pre_creating_thread.start()
+
+    def _precreate_maps(self):
+        while True:
+            if self._last_mapfile is None or self._map_objs_precreated.full():
+                time.sleep (0.5)
+                continue
+            
 
     def get_map(self, query):
         if self.res_range and not self.res_range.contains(query.bbox, query.size,
@@ -97,6 +111,7 @@ class MapnikSource(MapLayer):
     def _create_map_obj(self, mapfile):
         m = mapnik.Map(0, 0)
         mapnik.load_map(m, str(mapfile))
+        self._last_mapfile = mapfile
         return m
 
     def map_obj(self, mapfile):
