@@ -119,7 +119,7 @@ class TileWorkerPool(object):
         if force:
             timeout = 1.0
         else:
-            timeout = None
+            timeout = 600
         for proc in self.procs:
             proc.join(timeout)
 
@@ -519,5 +519,3 @@ def seed_task(task, concurrency=2, dry_run=False, skip_geoms_for_last_levels=0,
         raise
     finally:
         tile_worker_pool.stop()
-
-
